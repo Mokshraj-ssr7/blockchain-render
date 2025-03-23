@@ -181,11 +181,42 @@ const API = (function() {
         throw new Error(data.message || 'File upload failed');
       }
       
-      console.log('Upload successful:', data);
+      console.log('Upload successful - Full API response:', data);
       
+      // Based on the server logs, the response has a specific structure
+      // The hash values are in data.file.ipfsHash and data.file.transactionHash
+      const fileInfo = data.file || {};
+      
+      // Extract hash values from all possible locations
+      const ipfsHash = fileInfo.ipfsHash || 
+                       data.ipfsHash || 
+                       null;
+      
+      const blockchainTxHash = fileInfo.transactionHash || 
+                               fileInfo.blockchainTxHash || 
+                               data.transactionHash || 
+                               data.blockchainTxHash ||
+                               null;
+      
+      console.log('Extracted hash values:', { ipfsHash, blockchainTxHash });
+      
+      // Construct a consistent response format with all possible hash locations included
       return {
         success: true,
-        fileData: data.data
+        // Include directly available hashes at top level
+        ipfsHash: ipfsHash,
+        blockchainTxHash: blockchainTxHash,
+        transactionHash: blockchainTxHash,
+        // Include data fields
+        fileData: data.data || data.fileData || data.file || {
+          id: data.id,
+          filename: file.name,
+          ipfsHash: ipfsHash,
+          blockchainTxHash: blockchainTxHash,
+          receiverAddress: receiverAddress
+        },
+        // Return the raw response
+        rawResponse: data
       };
     } catch (error) {
       console.error('Error in file upload:', error);
@@ -468,6 +499,50 @@ const API = (function() {
     }
   }
   
+  // Get details for a specific file by ID
+  async function getFileDetails(fileId) {
+    if (!fileId) {
+      throw new Error('File ID is required');
+    }
+    
+    try {
+      console.log(`Fetching file details for ID: ${fileId}`);
+      const result = await fetchWithAuth(`${BASE_URL}/api/files/detail/${fileId}`);
+      
+      console.log('File details API response:', result);
+      
+      if (!result || !result.success) {
+        console.error('Failed to fetch file details:', result?.message || 'Unknown error');
+        throw new Error(result?.message || 'Failed to fetch file details');
+      }
+      
+      // Handle different possible response formats
+      let fileData = null;
+      
+      if (result.file) {
+        fileData = result.file;
+      } else if (result.data) {
+        fileData = result.data;
+      } else if (result.fileData) {
+        fileData = result.fileData;
+      }
+      
+      console.log('Extracted file data:', fileData);
+      
+      // If we still don't have the file data, try another approach
+      if (!fileData && typeof result === 'object') {
+        // Just return the whole result, something in there might be useful
+        console.log('No specific file data found, returning entire result object');
+        return result;
+      }
+      
+      return fileData;
+    } catch (error) {
+      console.error('Get file details error:', error);
+      throw error;
+    }
+  }
+  
   // Return public methods and properties
   return {
     BASE_URL, // Expose BASE_URL for other modules to use
@@ -480,6 +555,7 @@ const API = (function() {
     downloadFile,
     generatePasscode,
     refreshUser,
-    checkServerStatus
+    checkServerStatus,
+    getFileDetails
   };
 })(); 

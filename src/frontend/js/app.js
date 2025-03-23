@@ -386,29 +386,198 @@ const App = (function() {
         const uploadResult = document.getElementById('upload-result');
         uploadResult.classList.remove('hidden');
         
+        // Log the entire result for debugging
+        console.log('Upload result raw data:', result);
+        
+        // Look directly in the API response for the file data
+        // The server logs show that the response structure includes the hash values
+        const rawResponse = result.rawResponse;
+        console.log('Raw API response:', rawResponse);
+        
+        // DIRECT FIX: Based on the server logs, the hash values are in the following structure
+        // { success: true, message: 'File uploaded successfully', file: { ipfsHash: '...', transactionHash: '...' } }
+        // Try to extract that specific structure
+        const serverFile = rawResponse?.file || {};
+        
+        // Show the exact file object from the server response for debugging
+        console.log('Server file object:', serverFile);
+        
+        // Try to get hash values from all possible locations
+        let ipfsHash = serverFile.ipfsHash || 
+                      rawResponse.ipfsHash || 
+                      result.ipfsHash ||
+                      null;
+        
+        let blockchainTxHash = serverFile.transactionHash || 
+                              serverFile.blockchainTxHash || 
+                              rawResponse.transactionHash || 
+                              rawResponse.blockchainTxHash ||
+                              result.blockchainTxHash ||
+                              result.transactionHash ||
+                              null;
+        
+        // SUPER DIRECT FIX for exactly the structure we saw in the logs
+        // Looking at the server logs, we found that the server responds with:
+        // { success: true, message: 'File uploaded successfully', file: { ipfsHash: '...', transactionHash: '...' } }
+        if (rawResponse && rawResponse.success === true && 
+            rawResponse.message === 'File uploaded successfully' && 
+            rawResponse.file) {
+            console.log('Found exact server response structure from logs!');
+            
+            if (!ipfsHash && rawResponse.file.ipfsHash) {
+                console.log('Fixing IPFS hash from direct server response structure');
+                ipfsHash = rawResponse.file.ipfsHash;
+            }
+            
+            if (!blockchainTxHash && rawResponse.file.transactionHash) {
+                console.log('Fixing blockchain transaction hash from direct server response structure');
+                blockchainTxHash = rawResponse.file.transactionHash;
+            }
+        }
+        
+        // If we still don't have hashes, make them show in UI anyway with the exact values from logs
+        // This is a last resort fallback to make it display something
+        if (!ipfsHash && serverFile && serverFile.ipfsHash) {
+            ipfsHash = serverFile.ipfsHash;
+        }
+        
+        if (!blockchainTxHash && serverFile && serverFile.transactionHash) {
+            blockchainTxHash = serverFile.transactionHash; 
+        }
+        
+        console.log('Final extracted hash values:', { ipfsHash, blockchainTxHash });
+        
+        // First, properly extract the file data from various possible locations in the response
+        let fileData = null;
+        
+        if (result.fileData) {
+          fileData = result.fileData;
+          console.log('Found fileData directly in result.fileData:', fileData);
+        } else if (result.data) {
+          fileData = result.data;
+          console.log('Found fileData in result.data:', fileData);
+        } else if (result.file) {
+          fileData = result.file;
+          console.log('Found fileData in result.file:', fileData);
+        }
+        
+        // Also check for direct hash values at top level of response
+        const directIpfsHash = result.ipfsHash;
+        const directBlockchainTxHash = result.blockchainTxHash || result.transactionHash;
+        
+        console.log('Direct hash values from response:', {
+          ipfsHash: directIpfsHash,
+          blockchainTxHash: directBlockchainTxHash
+        });
+        
+        console.log('Processed file data for display:', fileData);
+        
         // Fill in file details
-        document.getElementById('uploaded-filename').textContent = result.fileData.filename;
+        const filenameElement = document.getElementById('uploaded-filename');
+        if (fileData && fileData.filename) {
+          filenameElement.textContent = fileData.filename;
+          filenameElement.classList.add('success-value');
+        } else {
+          filenameElement.textContent = fileInput.files[0].name || 'Unknown';
+          filenameElement.classList.add('success-value');
+        }
         
         // Display IPFS hash with formatting
         const ipfsHashElement = document.getElementById('uploaded-ipfs-hash');
-        if (result.fileData.ipfsHash) {
-          ipfsHashElement.textContent = result.fileData.ipfsHash;
+        
+        // Try to use the hash value directly from the raw response
+        if (ipfsHash) {
+          console.log('Using IPFS hash directly from response:', ipfsHash);
+          ipfsHashElement.textContent = ipfsHash;
+          ipfsHashElement.classList.add('success-value');
+        } else if (fileData && fileData.ipfsHash) {
+          // Fall back to fileData
+          ipfsHashElement.textContent = fileData.ipfsHash;
           ipfsHashElement.classList.add('success-value');
         } else {
-          ipfsHashElement.textContent = 'N/A';
+          // Still no hash, show processing state
+          ipfsHashElement.textContent = 'Processing...';
+          ipfsHashElement.classList.add('pending-value');
+          
+          // Fallback to the regular flow
+          // Try to fetch the IPFS hash after a delay
+          setTimeout(async () => {
+            try {
+              const fileDetails = await API.getFileDetails(fileData.id || fileData._id);
+              console.log('Fetched file details for IPFS hash:', fileDetails);
+              
+              if (fileDetails && fileDetails.ipfsHash) {
+                ipfsHashElement.textContent = fileDetails.ipfsHash;
+                ipfsHashElement.classList.remove('pending-value');
+                ipfsHashElement.classList.add('success-value');
+              } else {
+                ipfsHashElement.textContent = 'Not available';
+                ipfsHashElement.classList.remove('pending-value');
+                ipfsHashElement.classList.add('neutral-value');
+              }
+            } catch (err) {
+              console.error('Failed to fetch IPFS hash:', err);
+              ipfsHashElement.textContent = 'Not available';
+              ipfsHashElement.classList.remove('pending-value');
+              ipfsHashElement.classList.add('neutral-value');
+            }
+          }, 1500);
         }
         
         // Display blockchain transaction with formatting
         const blockchainTxElement = document.getElementById('uploaded-blockchain-tx');
-        if (result.fileData.blockchainTxHash) {
-          blockchainTxElement.textContent = result.fileData.blockchainTxHash;
+        
+        // Try to use the transaction hash value directly from the raw response
+        if (blockchainTxHash) {
+          console.log('Using blockchain transaction hash directly from response:', blockchainTxHash);
+          blockchainTxElement.textContent = blockchainTxHash;
+          blockchainTxElement.classList.add('success-value');
+        } else if (fileData && (fileData.blockchainTxHash || fileData.transactionHash)) {
+          // Fall back to fileData
+          blockchainTxElement.textContent = fileData.blockchainTxHash || fileData.transactionHash;
           blockchainTxElement.classList.add('success-value');
         } else {
-          blockchainTxElement.textContent = 'N/A';
+          // Still no hash, show processing state
+          blockchainTxElement.textContent = 'Processing...';
+          blockchainTxElement.classList.add('pending-value');
+          
+          // Fallback to the regular flow
+          // Try to fetch the transaction hash after a delay
+          setTimeout(async () => {
+            try {
+              const fileDetails = await API.getFileDetails(fileData.id || fileData._id);
+              console.log('Fetched file details for transaction hash:', fileDetails);
+              
+              if (fileDetails && (fileDetails.blockchainTxHash || fileDetails.transactionHash)) {
+                blockchainTxElement.textContent = fileDetails.blockchainTxHash || fileDetails.transactionHash;
+                blockchainTxElement.classList.remove('pending-value');
+                blockchainTxElement.classList.add('success-value');
+              } else {
+                blockchainTxElement.textContent = 'Not available';
+                blockchainTxElement.classList.remove('pending-value');
+                blockchainTxElement.classList.add('neutral-value');
+              }
+            } catch (err) {
+              console.error('Failed to fetch transaction hash:', err);
+              blockchainTxElement.textContent = 'Not available';
+              blockchainTxElement.classList.remove('pending-value');
+              blockchainTxElement.classList.add('neutral-value');
+            }
+          }, 1500);
         }
         
-        // Display receiver address
-        document.getElementById('uploaded-receiver').textContent = result.fileData.receiverAddress;
+        // Display receiver address and username if available
+        const receiverElement = document.getElementById('uploaded-receiver');
+        if (fileData && fileData.receiver && fileData.receiver.username) {
+          receiverElement.textContent = `${fileData.receiver.username} (${fileData.receiverAddress})`;
+          receiverElement.classList.add('success-value');
+        } else if (fileData && fileData.receiverAddress) {
+          receiverElement.textContent = fileData.receiverAddress;
+          receiverElement.classList.add('success-value');
+        } else {
+          receiverElement.textContent = receiverAddress;
+          receiverElement.classList.add('success-value');
+        }
         
         // Show success message
         UI.showToast('File uploaded and transferred successfully!', 'success');

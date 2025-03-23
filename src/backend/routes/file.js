@@ -84,7 +84,11 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
     }
 
     const fileHash = encryption.hashFile(req.file.buffer);
+    console.log('File hash generated:', fileHash);
+    
     const ipfsResult = await ipfsUtil.storeFileOnIpfs(encryptedBuffer);
+    console.log('IPFS storage result:', ipfsResult);
+    
     if (!ipfsResult.success) {
       return res.status(500).json({
         success: false,
@@ -98,12 +102,20 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
       passcodeHash,
       receiverAddress
     );
+    console.log('Blockchain storage result:', blockchainResult);
+    
     if (!blockchainResult.success) {
       return res.status(500).json({
         success: false,
         message: 'Failed to store on blockchain'
       });
     }
+
+    // Log the generated hashes and transaction info
+    console.log('---- File Upload Summary ----');
+    console.log('IPFS Hash:', ipfsResult.ipfsHash);
+    console.log('Blockchain Transaction Hash:', blockchainResult.transactionHash);
+    console.log('----------------------------');
 
     const file = await File.create({
       filename: req.file.originalname,
@@ -118,14 +130,26 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
       receiverAddress
     });
 
+    // Enhanced response with more consistent field naming
+    const responseData = {
+      id: file._id,
+      filename: file.filename,
+      ipfsHash: ipfsResult.ipfsHash,
+      blockchainTxHash: blockchainResult.transactionHash,
+      transactionHash: blockchainResult.transactionHash, // Include alias for compatibility
+      receiverAddress,
+      size: file.size
+    };
+
+    console.log('File upload successful. Returning data:', responseData);
+
+    // Respond directly with the hash values as top-level properties for easier access
     res.status(201).json({
       success: true,
-      data: {
-        id: file._id,
-        filename: file.filename,
-        ipfsHash: file.ipfsHash,
-        blockchainTxHash: file.blockchainTxHash
-      }
+      ipfsHash: ipfsResult.ipfsHash,
+      blockchainTxHash: blockchainResult.transactionHash,
+      data: responseData,
+      fileData: responseData // Include both formats for compatibility
     });
   } catch (error) {
     console.error(error);
@@ -250,6 +274,66 @@ router.get('/received', authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get file details by ID
+router.get('/detail/:id', authenticate, async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        message: 'File ID is required'
+      });
+    }
+
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    // Check if user is either the sender or the intended receiver
+    const isSender = file.sender.toString() === req.user._id.toString();
+    const isReceiver = file.receiverAddress === req.user.blockchainAddress;
+    
+    if (!isSender && !isReceiver) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to view this file'
+      });
+    }
+
+    // Ensure that we always return the IPFS hash and transaction hash
+    // This is a critical fix to ensure the frontend always gets this data
+    const fileDetails = {
+      id: file._id,
+      filename: file.filename,
+      ipfsHash: file.ipfsHash || 'Not available',
+      blockchainTxHash: file.blockchainTxHash || 'Not available',
+      transactionHash: file.blockchainTxHash || 'Not available', // Alias for consistency
+      receiverAddress: file.receiverAddress,
+      createdAt: file.createdAt,
+      size: file.size,
+      mimeType: file.mimeType
+    };
+
+    console.log('Sending file details to client:', fileDetails);
+
+    res.status(200).json({
+      success: true,
+      file: fileDetails,
+      data: fileDetails // Include both formats for compatibility
+    });
+  } catch (error) {
+    console.error('Error fetching file details:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

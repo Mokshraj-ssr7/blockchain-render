@@ -963,4 +963,44 @@ function cleanupExpiredFiles(expiryTime) {
 }
 
 // Initialize cleanup when server starts
-initializeFileCleanup(); 
+initializeFileCleanup();
+
+// Add a test route to check IPFS and blockchain services
+app.get('/api/test/services', async (req, res) => {
+  try {
+    // Import the IPFS and blockchain utilities
+    const ipfsUtil = require('./utils/ipfs');
+    const blockchainUtil = require('./utils/blockchain');
+    
+    // Create a sample buffer
+    const sampleBuffer = Buffer.from('This is a test file for hash generation');
+    
+    // Test IPFS
+    console.log('Testing IPFS service...');
+    const ipfsResult = await ipfsUtil.storeFileOnIpfs(sampleBuffer);
+    
+    // Test blockchain
+    console.log('Testing blockchain service...');
+    const blockchainResult = await blockchainUtil.storeFileOnBlockchain(
+      'TestFileHash', 
+      ipfsResult.ipfsHash,
+      'TestPasscodeHash',
+      '0xTestReceiverAddress'
+    );
+    
+    // Return combined results
+    res.status(200).json({
+      success: true,
+      ipfs: ipfsResult,
+      blockchain: blockchainResult,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Service test error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error testing services',
+      error: error.message
+    });
+  }
+}); 
