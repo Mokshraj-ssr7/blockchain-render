@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Secure Blockchain File Transfer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Ensure proper CORS handling with a more permissive CSP -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
+  <!-- Preconnect to APIs -->
+  <link rel="preconnect" href="http://localhost:3001">
+</head>
+<body>
+  <!-- Connection status indicator -->
+  <div id="connection-status" class="connection-status">
+    <span class="status-icon">⚠️</span>
+    <span class="status-message">Checking connection...</span>
+  </div>
+  
+  <header>
+    <div class="container">
+      <h1>Secure Blockchain File Transfer</h1>
+      <nav>
+        <ul>
+          <li><a href="#home" data-page="home" class="active">Home</a></li>
+          <li><a href="#upload" data-page="upload" class="auth-required">Upload File</a></li>
+          <li><a href="#files" data-page="files" class="auth-required">My Files</a></li>
+          <li><a href="#address" data-page="address" class="auth-required">My Address</a></li>
+          <li><a href="#login" data-page="login" class="auth-not-required">Login</a></li>
+          <li><a href="#register" data-page="register" class="auth-not-required">Register</a></li>
+          <li><a href="#logout" id="logout-btn" class="auth-required">Logout</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Home Page -->
+    <section id="home-page" class="page active">
+      <div class="hero">
+        <div class="container">
+          <h2>Secure. Private. Decentralized.</h2>
+          <p>Transfer your files securely using blockchain technology</p>
+          <div class="hero-buttons">
+            <button id="get-started-btn" class="btn btn-primary">Get Started</button>
+            <button id="learn-more-btn" class="btn btn-secondary">Learn More</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- About Us Section -->
+      <div class="about-section container">
+        <h2>About Us</h2>
+        <div class="about-content">
+          <div class="about-text">
+            <p>Welcome to Secure Blockchain File Transfer, a cutting-edge solution designed to ensure the anonymous, secure, and decentralized transfer of high-value data files. Our platform leverages blockchain technology, encryption, and decentralized storage to provide a tamper-proof, privacy-focused file-sharing system.</p>
+            <p>At Mok-ssr7, we believe in the power of decentralization to revolutionize secure communication. Our mission is to create privacy-centric, transparent, and immutable file transfer solutions that protect user data from unauthorized access.</p>
+            <p>Whether you need to send confidential documents, sensitive media, or encrypted archives, our platform guarantees end-to-end security with cryptographic integrity.</p>
+            <p class="about-tagline">🚀 Innovate. Encrypt. Secure. Join us in redefining secure digital transfers with blockchain.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="features container">
+        <h2>Why Choose Blockchain File Transfer?</h2>
+        
+        <div class="feature-grid">
+          <div class="feature-card">
+            <i class="fas fa-lock"></i>
+            <h3>End-to-End Encryption</h3>
+            <p>All files are encrypted with passcodes that only you and your recipient know.</p>
+          </div>
+          
+          <div class="feature-card">
+            <i class="fas fa-link"></i>
+            <h3>Blockchain Verification</h3>
+            <p>Every file transfer is verified and recorded on the blockchain, ensuring authenticity.</p>
+          </div>
+          
+          <div class="feature-card">
+            <i class="fas fa-server"></i>
+            <h3>Decentralized Storage</h3>
+            <p>Files are stored on IPFS, a distributed file system, not on central servers.</p>
+          </div>
+          
+          <div class="feature-card">
+            <i class="fas fa-user-shield"></i>
+            <h3>Privacy First</h3>
+            <p>No personal data required. Use blockchain addresses to send and receive files.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="how-it-works container">
+        <h2>How It Works</h2>
+        
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3>Register and Get Address</h3>
+            <p>Create an account and get your blockchain address to receive files.</p>
+          </div>
+          
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3>Upload File</h3>
+            <p>Upload a file, enter recipient's blockchain address, and create a passcode.</p>
+          </div>
+          
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3>Share Passcode</h3>
+            <p>Share the passcode with your recipient through a secure channel.</p>
+          </div>
+          
+          <div class="step">
+            <div class="step-number">4</div>
+            <h3>Recipient Downloads</h3>
+            <p>Recipient uses the passcode to download and decrypt the file.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Login Page -->
+    <section id="login-page" class="page auth-not-required">
+      <div class="container">
+        <h2>Login</h2>
+        <form id="login-form" class="form">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Login</button>
+          
+          <p class="form-footer">
+            Don't have an account? <a href="#" data-page="register">Register</a>
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Register Page -->
+    <section id="register-page" class="page auth-not-required">
+      <div class="container">
+        <h2>Register</h2>
+        <form id="register-form" class="form">
+          <div class="form-group">
+            <label for="register-username">Username</label>
+            <input type="text" id="register-username" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="register-password">Password</label>
+            <input type="password" id="register-password" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="register-confirm-password">Confirm Password</label>
+            <input type="password" id="register-confirm-password" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Register</button>
+          
+          <p class="form-footer">
+            Already have an account? <a href="#" data-page="login">Login</a>
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- My Blockchain Address Page -->
+    <section id="address-page" class="page auth-required">
+      <div class="container">
+        <h2>My Blockchain Address</h2>
+        
+        <div class="address-container">
+          <p>Your blockchain address is used to receive files. Share it with others when they want to send you files.</p>
+          
+          <div class="address-display">
+            <p id="user-blockchain-address">Loading address...</p>
+            <div class="address-actions">
+              <button id="copy-address-btn" class="btn btn-secondary">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+              <button id="generate-address-btn" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i> Generate New
+              </button>
+            </div>
+          </div>
+          
+          <div class="address-info">
+            <p><strong>Note:</strong> Generating a new address will invalidate your old one. Any files sent to your old address will not be accessible.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload File Page -->
+    <section id="upload-page" class="page auth-required">
+      <div class="container">
+        <h2>Upload File</h2>
+        
+        <form id="upload-form" class="form">
+          <div class="form-group">
+            <label for="file-input">Select File</label>
+            <input type="file" id="file-input" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="receiver-address">Receiver's Blockchain Address</label>
+            <div class="input-with-button">
+              <input type="text" id="receiver-address" required placeholder="Enter receiver's blockchain address">
+              <button type="button" id="verify-address-btn" class="btn btn-secondary">Verify</button>
+            </div>
+          </div>
+          
+          <div id="receiver-info" class="receiver-info hidden">
+            <p>Sending to: <span id="receiver-username"></span></p>
+          </div>
+          
+          <div class="form-group">
+            <label for="passcode">Passcode (6 digits)</label>
+            <div class="input-with-button">
+              <input type="text" id="passcode" required pattern="[0-9]{6}" placeholder="6-digit passcode">
+              <button type="button" id="generate-passcode-btn" class="btn btn-secondary">Generate</button>
+            </div>
+            <p class="input-hint">Share this passcode securely with the receiver</p>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Upload File</button>
+        </form>
+        
+        <div id="upload-progress" class="upload-progress hidden">
+          <h3 id="upload-status">Uploading: 0%</h3>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+        </div>
+        
+        <div id="upload-result" class="upload-result hidden">
+          <h3>File Uploaded Successfully!</h3>
+          
+          <div class="result-details">
+            <p><strong>Filename:</strong> <span id="uploaded-filename"></span></p>
+            <p><strong>IPFS Hash:</strong> <span id="uploaded-ipfs-hash"></span></p>
+            <p><strong>Blockchain Transaction:</strong> <span id="uploaded-blockchain-tx"></span></p>
+            <p><strong>Receiver:</strong> <span id="uploaded-receiver"></span></p>
+          </div>
+          
+          <p class="upload-reminder">
+            <strong>Important:</strong> Remember to share the passcode with the receiver through a secure channel. 
+            The file cannot be accessed without it.
+          </p>
+          
+          <div class="upload-actions">
+            <button class="btn btn-primary" onclick="UI.navigateTo('upload')">Upload Another File</button>
+            <button class="btn btn-secondary" onclick="UI.navigateTo('files')">View My Files</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- My Files Page -->
+    <section id="files-page" class="page auth-required">
+      <div class="container">
+        <h2>My Files</h2>
+        
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="sent">Files Sent</button>
+          <button class="tab-btn" data-tab="received">Files Received</button>
+        </div>
+        
+        <div id="sent-files" class="tab-content active">
+          <div class="section-header">
+            <h3>Files You've Sent</h3>
+          </div>
+          <div id="sent-files-list" class="file-list">
+            <!-- Files will be loaded via JavaScript -->
+            <p class="loading-message">Loading your sent files...</p>
+          </div>
+        </div>
+        
+        <div id="received-files" class="tab-content">
+          <div class="section-header">
+            <h3>Files You've Received</h3>
+          </div>
+          <div id="received-files-list" class="file-list">
+            <!-- Files will be loaded via JavaScript -->
+            <p class="loading-message">Loading your received files...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Download File Modal -->
+  <div id="download-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Download File</h3>
+      
+      <form id="download-form" class="form">
+        <input type="hidden" id="download-file-id">
+        
+        <div class="form-group">
+          <label for="download-passcode">Enter Passcode</label>
+          <input type="text" id="download-passcode" required pattern="[0-9]{6}" placeholder="6-digit passcode">
+          <p class="input-hint">This is the 6-digit passcode shared by the sender</p>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Download</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-logo">
+        <h3>Secure Blockchain File Transfer</h3>
+        <p class="footer-tagline">🔗 Secure | Anonymous | Decentralized</p>
+      </div>
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#home">Home</a></li>
+          <li><a href="#upload">Upload</a></li>
+          <li><a href="#files">My Files</a></li>
+          <li><a href="#address">My Address</a></li>
+        </ul>
+      </div>
+      <div class="footer-contact">
+        <h4>Contact Us</h4>
+        <ul>
+          <li><i class="fas fa-envelope"></i> support@mokssr7blockchain.com</li>
+          <li><i class="fas fa-globe"></i> www.mokssr7blockchain.com</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>📌 Copyright © 2025 | Created by Mok-ssr7 Team 🚀</p>
+    </div>
+  </div>
+</footer>
+</html> 
